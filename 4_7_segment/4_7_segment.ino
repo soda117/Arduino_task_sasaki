@@ -1,86 +1,257 @@
-#include "Timer.h" //include timer library
-Timer t; // craete a timer object
-long number = 0; //declear the variables
-int first_digit = 0;
-int second_digit = 0;
-int third_digit = 0;
-int fourth_digit = 0;
-int timer_event = 0;
-int CA_1 = 12;
-int CA_2 = 11;
-int CA_3 = 10;
-int CA_4 = 9;
-int clk = 6;
-int latch = 5;
-int data = 4;
-int count = 0;
-int digits[4] ;
-int CAS[4] = {12, 11, 10, 9};
-byte numbers[10] {B11111100, B01100000, B11011010, B11110010, B01100110, B10110110, B10111110, B11100000, B11111110, B11110110};
-//byte combinations for each number 0-9
-void setup() {
-  Serial.begin(9600); //serial start and pin config
-  pinMode(CA_1, OUTPUT);
-  pinMode(CA_2, OUTPUT);
-  pinMode(CA_3, OUTPUT);
-  pinMode(CA_4, OUTPUT);
-  pinMode(clk, OUTPUT);
-  pinMode(latch, OUTPUT);
-  pinMode(data, OUTPUT);
-  digitalWrite(CA_1, HIGH);
-  digitalWrite(CA_2, HIGH);
-  digitalWrite(CA_3, HIGH);
-  digitalWrite(CA_4, HIGH);
-  Serial.println("please Enter a number from 0 to 9999");
+#include <TimerOne.h>
+//the pins of 4-digit 7-segment display attach to pin2-13 respectively 
+int a = 7;
+int b = 3;
+int c = 4;
+int d = 5;
+int e = 6;
+int f = 2;
+int g = 8;
+int p = 9;
+int d4 = 10;
+int d3 = 11;
+int d2 = 12;
+int d1 = 13;
+long n = 0;// n represents the value displayed on the LED display. For example, when n=0, 0000 is displayed. The maximum value is 9999. 
+int x = 100;
+int del = 5;//Set del as 5; the value is the degree of fine tuning for the clock
+int count = 0;//Set count=0. Here count is a count value that increases by 1 every 0.1 second, which means 1 second is counted when the value is 10
+void setup()
+{
+  //set all the pins of the LED display as output
+  pinMode(d1, OUTPUT);
+  pinMode(d2, OUTPUT);
+  pinMode(d3, OUTPUT);
+  pinMode(d4, OUTPUT);
+  pinMode(a, OUTPUT);
+  pinMode(b, OUTPUT);
+  pinMode(c, OUTPUT);
+  pinMode(d, OUTPUT);
+  pinMode(e, OUTPUT);
+  pinMode(f, OUTPUT);
+  pinMode(g, OUTPUT);
+  pinMode(p, OUTPUT);
+
+  Timer1.initialize(100000); // set a timer of length 100000 microseconds (or 0.1 sec - or 10Hz => the led will blink 5 times, 5 cycles of on-and-off, per second)
+  Timer1.attachInterrupt( add ); // attach the service routine here
+}
+/***************************************/ 
+void loop()
+{
+  clearLEDs();//clear the 7-segment display screen
+  pickDigit(0);//Light up 7-segment display d1
+  pickNumber((n/1000));// get the value of thousand
+  delay(del);//delay 5ms
+
+  clearLEDs();//clear the 7-segment display screen
+  pickDigit(1);//Light up 7-segment display d2
+  pickNumber((n%1000)/100);// get the value of hundred
+  delay(del);//delay 5ms
+
+  clearLEDs();//clear the 7-segment display screen
+  pickDigit(2);//Light up 7-segment display d3
+  pickNumber(n%100/10);//get the value of ten
+  delay(del);//delay 5ms
+
+  clearLEDs();//clear the 7-segment display screen
+  pickDigit(3);//Light up 7-segment display d4
+  pickNumber(n%10);//Get the value of single digit
+  delay(del);//delay 5ms
+}
+/**************************************/ 
+void pickDigit(int x) //light up a 7-segment display
+{
+  //The 7-segment LED display is a common-cathode one. So also use digitalWrite to  set d1 as high and the LED will go out
+  digitalWrite(d1, HIGH);
+  digitalWrite(d2, HIGH);
+  digitalWrite(d3, HIGH);
+  digitalWrite(d4, HIGH);
+
+  switch(x)
+  {
+    case 0: 
+    digitalWrite(d1, LOW);//Light d1 up 
+    break;
+    case 1: 
+    digitalWrite(d2, LOW); //Light d2 up 
+    break;
+    case 2: 
+    digitalWrite(d3, LOW); //Light d3 up 
+    break;
+    default: 
+    digitalWrite(d4, LOW); //Light d4 up 
+    break;
+  }
+}
+//The function is to control the 7-segment LED display to display numbers. Here x is the number to be displayed. It is an integer from 0 to 9 
+void pickNumber(int x)
+{
+  switch(x)
+  {
+    default: 
+    zero(); 
+    break;
+    case 1: 
+    one(); 
+    break;
+    case 2: 
+    two(); 
+    break;
+    case 3: 
+    three(); 
+    break;
+    case 4: 
+    four(); 
+    break;
+    case 5: 
+    five(); 
+    break;
+    case 6: 
+    six(); 
+    break;
+    case 7: 
+    seven(); 
+    break;
+    case 8: 
+    eight(); 
+    break;
+    case 9: 
+    nine(); 
+    break;
+  }
+} 
+void clearLEDs() //clear the 7-segment display screen
+{
+  digitalWrite(a, LOW);
+  digitalWrite(b, LOW);
+  digitalWrite(c, LOW);
+  digitalWrite(d, LOW);
+  digitalWrite(e, LOW);
+  digitalWrite(f, LOW);
+  digitalWrite(g, LOW);
+  digitalWrite(p, LOW);
 }
 
-void loop() {
-  t.update(); //timer update
-  if (Serial.available()) { // read from serial
-    t.stop(timer_event); //stop timer if anythign to read
-    cathode_high(); // blank the screen
-    String s = Serial.readString(); //read the serail value
-    number = (long)s.toInt(); //convert it to int
-    if (number > 9999) { //check the number is 0-9999
-      Serial.println("Please Enter Number Between 0 - 9999");
-    } else {
-      break_number(number);
-      timer_event = t.every(1, display_number); // start timer again
+void zero() //the 7-segment led display 0
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, HIGH);
+  digitalWrite(f, HIGH);
+  digitalWrite(g, LOW);
+}
+
+void one() //the 7-segment led display 1
+{
+  digitalWrite(a, LOW);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, LOW);
+  digitalWrite(e, LOW);
+  digitalWrite(f, LOW);
+  digitalWrite(g, LOW);
+}
+
+void two() //the 7-segment led display 2
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, LOW);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, HIGH);
+  digitalWrite(f, LOW);
+  digitalWrite(g, HIGH);
+}
+void three() //the 7-segment led display 3
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, LOW);
+  digitalWrite(f, LOW);
+  digitalWrite(g, HIGH);
+}
+
+void four() //the 7-segment led display 4
+{
+  digitalWrite(a, LOW);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, LOW);
+  digitalWrite(e, LOW);
+  digitalWrite(f, HIGH);
+  digitalWrite(g, HIGH);
+}
+
+void five() //the 7-segment led display 5
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, LOW);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, LOW);
+  digitalWrite(f, HIGH);
+  digitalWrite(g, HIGH);
+}
+
+void six() //the 7-segment led display 6
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, LOW);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, HIGH);
+  digitalWrite(f, HIGH);
+  digitalWrite(g, HIGH);
+}
+
+void seven() //the 7-segment led display 7
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, LOW);
+  digitalWrite(e, LOW);
+  digitalWrite(f, LOW);
+  digitalWrite(g, LOW);
+}
+
+void eight() //the 7-segment led display 8
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, HIGH);
+  digitalWrite(f, HIGH);
+  digitalWrite(g, HIGH);
+}
+
+void nine() //the 7-segment led display 9
+{
+  digitalWrite(a, HIGH);
+  digitalWrite(b, HIGH);
+  digitalWrite(c, HIGH);
+  digitalWrite(d, HIGH);
+  digitalWrite(e, LOW);
+  digitalWrite(f, HIGH);
+  digitalWrite(g, HIGH);
+}
+/*******************************************/
+void add()
+{
+  // Toggle LED
+  count ++;
+  if(count == 10)
+  {
+    count = 0;
+    n++;
+    if(n == 10000)
+    {
+      n = 0;
     }
   }
-}
-
-void break_number(long num) { // seperate the input number into 4 single digits
-
-  first_digit = num / 1000;
-  digits[0] = first_digit;
-
-  int first_left = num - (first_digit * 1000);
-  second_digit = first_left / 100;
-  digits[1] = second_digit;
-  int second_left = first_left - (second_digit * 100);
-  third_digit = second_left / 10;
-  digits[2] = third_digit;
-  fourth_digit = second_left - (third_digit * 10);
-  digits[3] = fourth_digit;
-}
-
-void display_number() { //scanning
-
-  cathode_high(); //black screen
-  digitalWrite(latch, LOW); //put the shift register to read
-  shiftOut(data, clk, LSBFIRST, numbers[digits[count]]); //send the data
-  digitalWrite(CAS[count], LOW); //turn on the relevent digit
-  digitalWrite(latch, HIGH); //put the shift register to write mode
-  count++; //count up the digit
-  if (count == 4) { // keep the count between 0-3
-    count = 0;
-  }
-}
-
-void cathode_high() { //turn off all 4 digits
-  digitalWrite(CA_1, HIGH);
-  digitalWrite(CA_2, HIGH);
-  digitalWrite(CA_3, HIGH);
-  digitalWrite(CA_4, HIGH);
 }
