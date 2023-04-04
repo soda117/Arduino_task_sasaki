@@ -1,4 +1,4 @@
-#include "TimerOne.h" //include timer library
+#include "Timer.h" //include timer library
 Timer t; // craete a timer object
 long number = 0; //declear the variables
 int first_digit = 0;
